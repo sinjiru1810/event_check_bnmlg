@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard · BINUS Maya Room Check</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body data-page="dashboard">
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Room Check</h1>
+          <p>Status session BINUS Maya</p>
+        </div>
+        <div class="badge" id="badge">
+          <span class="badge__dot"></span>
+          <span id="badge-text">Memuat…</span>
+        </div>
+      </header>
+
+      <div class="grid-stats">
+        <div class="stat">
+          <div class="stat__label">Cookie session</div>
+          <div class="stat__value" id="stat-cookies">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat__label">Berlaku sampai</div>
+          <div class="stat__value" id="stat-expiry">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat__label">Terakhir diperbarui</div>
+          <div class="stat__value" id="stat-updated">—</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <a class="btn btn--primary" id="btn-login" href="/login" style="width: auto">
+          <span class="btn__label">Login / Perbarui</span>
+        </a>
+        <button class="btn btn--ghost" id="btn-refresh" type="button">
+          <span class="spinner"></span>
+          <span class="btn__label">Cek &amp; Refresh Session</span>
+        </button>
+        <button class="btn btn--danger" id="btn-logout" type="button">Hapus Session</button>
+        <button class="btn btn--ghost" id="btn-open-bimay" type="button">
+          Buka Dashboard BIMAY
+        </button>
+      </div>
+
+      <p class="footer-note" style="margin-top: 14px">
+        Pemakaian harian cukup klik <strong>Cek &amp; Refresh Session</strong> —
+        otomatis, tanpa MFA. <strong>Login / Perbarui</strong> dipakai kalau
+        refresh melaporkan session mati atau mau ganti akun.
+      </p>
+
+      <div class="placeholder">
+        <strong>Data room booking belum tersambung</strong>
+        Setelah endpoint ketemu, tabel jadwal ruangan Malang tampil di sini.
+        Untuk sekarang halaman ini fokus ke status login.
+      </div>
+
+      <p class="footer-note">
+        Endpoint: <code>/api/status</code>, <code>/api/session/refresh</code>,
+        <code>/api/logout</code>
+      </p>
+    </main>
+
+    <div class="toast" id="toast"></div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

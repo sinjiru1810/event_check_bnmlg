@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Masuk · BINUS Maya Room Check</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body data-page="login">
+    <main class="auth">
+      <section class="auth__brand">
+        <div class="brand__mark">
+          <div class="brand__dot">BM</div>
+          <div class="brand__name">Room Check <span>· BINUS Malang</span></div>
+        </div>
+
+        <h1>Masuk pakai akun<br /><em>BINUS</em> kamu.</h1>
+        <p class="lede">
+          Autentikasi diproses sepenuhnya oleh Microsoft. Halaman ini cuma
+          nyiapin session supaya scraper bisa baca jadwal ruangan tanpa login
+          ulang tiap jalan.
+        </p>
+
+        <ul class="bullets">
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            <span>Password tidak pernah diketik di halaman ini — semuanya di domain Microsoft.</span>
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            <span>MFA / Authenticator tetap dipakai, jadi akun tetap aman.</span>
+          </li>
+          <li>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            <span>Session disimpan lokal di <code>.auth/state.json</code> dan bisa dicabut kapan saja.</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <div class="card__head">
+          <h2>Masuk</h2>
+          <p>Jendela Microsoft akan terbuka otomatis.</p>
+        </div>
+
+        <div class="notice" id="notice">
+          <span id="notice-text"></span>
+        </div>
+
+        <form id="login-form" autocomplete="off">
+          <div class="field">
+            <label for="email">Email BINUS <span class="hint">(opsional, buat prefill)</span></label>
+            <input
+              class="input"
+              id="email"
+              name="email"
+              type="email"
+              placeholder="nama@binus.edu"
+              autocomplete="username"
+            />
+          </div>
+
+          <button class="btn btn--primary" id="btn-login" type="submit">
+            <span class="spinner"></span>
+            <span class="btn__label">Masuk dengan Microsoft</span>
+          </button>
+        </form>
+
+        <button class="btn btn--danger" id="btn-cancel" type="button" style="display: none; width: 100%; margin-top: 12px">
+          Batalkan Proses
+        </button>
+
+        <ul class="steps" id="steps">
+          <li class="step" data-step="open"><span class="step__dot">1</span><span>Membuka browser</span></li>
+          <li class="step" data-step="wait"><span class="step__dot">2</span><span>Menunggu autentikasi Microsoft</span></li>
+          <li class="step" data-step="done"><span class="step__dot">3</span><span>Session tersimpan</span></li>
+        </ul>
+
+        <details class="log-wrap" id="log-wrap">
+          <summary>Lihat log proses</summary>
+          <pre class="log" id="log"></pre>
+        </details>
+
+        <p class="footer-note">
+          Server ini tidak menyimpan password. Kalau ragu, tutup tab ini dan
+          pakai <code>python auth/login.py</code> langsung dari terminal.
+        </p>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

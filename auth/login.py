@@ -41,6 +41,7 @@ STATE_PATH = ROOT / ".auth" / "state.json"
 
 ACAD_HOST = "acadservices.apps.binus.ac.id"
 START_URL = f"https://{ACAD_HOST}/LoginAD.php"
+LANDING_URL = f"https://{ACAD_HOST}/newstaff/#/index"
 LOGIN_TIMEOUT_S = 600  # 10 menit: cukup buat MFA + consent + "Stay signed in?"
 
 EMAIL_SELECTORS = "input[name='loginfmt'], input[type='email'], #i0116"
@@ -171,7 +172,13 @@ async def main() -> int:
             headless=False,
             args=["--start-maximized", "--disable-blink-features=AutomationControlled"],
         )
-        context = await browser.new_context(viewport=None, locale="id-ID")
+        context_options = {"viewport": None, "locale": "id-ID"}
+        if STATE_PATH.exists():
+            # Bawa cookie lama: kalau session Microsoft masih hidup, redirect
+            # LoginAD.php -> Microsoft -> balik lagi terjadi tanpa MFA/password.
+            context_options["storage_state"] = str(STATE_PATH)
+            print("[0/4] Session tersimpan dimuat (coba login otomatis)")
+        context = await browser.new_context(**context_options)
         page = await context.new_page()
 
         print(f"[1/4] Buka {START_URL}")
@@ -207,6 +214,14 @@ async def main() -> int:
             return 1
 
         print(f"\n[OK] Masuk: {dashboard.url}")
+
+        landing = os.environ.get("BINUS_LANDING_URL", "").strip() or LANDING_URL
+        try:
+            await dashboard.goto(landing, wait_until="domcontentloaded")
+            await asyncio.sleep(2)
+            print(f"     Diarahkan ke: {dashboard.url}")
+        except Exception as exc:
+            print(f"     [!] Gagal buka landing page: {exc}")
 
         await context.storage_state(path=str(STATE_PATH))
         cookies = await context.cookies()

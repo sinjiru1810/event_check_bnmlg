@@ -51,7 +51,9 @@ python auth/login.py
 ```
 
 Jendela Chromium kebuka. Ketik email + password di situ, selesaikan MFA.
-Setelah sampai dashboard, cookie disimpan ke `.auth/state.json`.
+Setelah sampai dashboard, browser otomatis diarahkan ke
+`https://acadservices.apps.binus.ac.id/newstaff/#/index`, lalu cookie disimpan
+ke `.auth/state.json`. Tujuan ini bisa diganti lewat `BINUS_LANDING_URL` di `.env`.
 
 Kalau mau email/password di-prefill otomatis, isi `.env` (lihat `.env.example`).
 Kosongkan saja kalau lebih nyaman ngetik manual.
@@ -68,6 +70,38 @@ Exit code `0` = session hidup, `2` = perlu login manual lagi.
 Cara kerjanya: buka `LoginAD.php` pakai state tersimpan, Microsoft lihat session
 MS-nya masih hidup, balik ke `acadservices`, cookie baru tersimpan. Jadi yang
 perlu login manual cuma kalau tenant minta re-auth (sign-in frequency / MFA).
+
+## Web UI
+
+Ada halaman login + dashboard lokal:
+
+```powershell
+python web/app.py
+# buka http://127.0.0.1:8000/login
+```
+
+- `/login` — form email (opsional) + tombol **Masuk dengan Microsoft**.
+  Tombol ini menjalankan `auth/login.py`, dan lognya ditampilkan live.
+- `/` — status session: jumlah cookie, masa berlaku, tombol refresh & logout.
+
+**UI ini sengaja nggak punya kolom password.** Password tetap diketik di
+domain resmi Microsoft. Kalau UI kita yang menerima password, itu pola
+credential harvesting dan MFA tetap nggak bisa dilewati.
+
+Session juga **terikat ke browser Playwright**, bukan ke Chrome/Edge harian.
+Maka tombol **Buka Dashboard BIMAY** menjalankan browser ber-session itu,
+bukan membuka link di browser biasa (yang nggak punya cookie dan bakal minta
+login lagi).
+
+Struktur web:
+
+```
+web/app.py               FastAPI + endpoint
+web/pages/login.html     halaman login
+web/pages/dashboard.html halaman status
+web/static/style.css     styling
+web/static/app.js        logic frontend (polling log live)
+```
 
 ## Struktur
 
