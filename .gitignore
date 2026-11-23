@@ -1,0 +1,15 @@
+# --- kredensial & session ---
+.env
+.auth/
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# --- data hasil scraping ---
+# Dump API di root repo ini berisi PII (nama, no HP, BinusianID).
+# Sebaiknya file lama dibersihkan dari history dan folder output di-ignore.
+output/
+data/
