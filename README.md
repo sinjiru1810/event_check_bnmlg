@@ -6,7 +6,7 @@ Scraper data room booking / jadwal ruangan BINUS Maya (kampus Malang).
 
 - [x] Login BINUS Maya via Microsoft (OAuth2 authorization code flow)
 - [x] Refresh session headless + session `requests` siap pakai
-- [ ] Scraper endpoint room booking (`getListRoom`, `getBookedRoom`, `getBookingShift`, `getDetailRoom`)
+- [x] Scraper room booking / peminjaman lab (`getListRoom`, `getBookedRoom`, `getBookingShift`, `getDetailRoom`, + 4 status lainnya)
 
 ## Cara login
 
@@ -71,6 +71,54 @@ Cara kerjanya: buka `LoginAD.php` pakai state tersimpan, Microsoft lihat session
 MS-nya masih hidup, balik ke `acadservices`, cookie baru tersimpan. Jadi yang
 perlu login manual cuma kalau tenant minta re-auth (sign-in frequency / MFA).
 
+## Scraper peminjaman lab / room booking
+
+Halaman aslinya: `https://acadservices.apps.binus.ac.id/newstaff/#/room/roomBookingTransaction`
+
+Semua endpoint ditemukan dari network page itu (prefix
+`/services/ci/index.php/`):
+
+| Endpoint | Payload | Isi |
+| --- | --- | --- |
+| `general/getFilterData` | `{listField:["DistinctPrevilegeLocation"]}` | daftar lokasi |
+| `room/room/getBookingShift` | `{Location}` | 6 shift jam |
+| `room/room/getListRoom` | `{Location}` | daftar ruangan |
+| `room/room/getDetailRoom` | `{Location, Date}` | semua jadwal ruangan |
+| `room/room/getBookedRoom` | `{Date, Location}` | peminjaman **requested** |
+| `room/room/getApprovedRoom` | `{Date, Location}` | peminjaman **approved** |
+| `room/room/getBlackoutRoom` | `{Location, Tgl}` | blackout |
+| `room/room/getExamRoom` | `{Location, Date}` | ujian |
+| `room/room/getCancelRejectedRoom` | `{Location, Date}` | cancel/rejected |
+
+Pakai:
+
+```powershell
+python scraper/room_booking.py --date 2026-10-19
+python scraper/room_booking.py --date 2026-10-19 --location MALANG --out output --print
+```
+
+Output: satu JSON per endpoint + `peminjaman_<tanggal>.json` (gabungan
+booked + approved yang sudah dinormalisasi dan di-deduplikasi) +
+`peminjaman_lab_<tanggal>.json` (khusus lab).
+
+Filter lab memakai `FACILITY_TYPE` dari `getListRoom`: `Lab Mac`, `Lab PR`,
+`Lab Gambar DKV`, `Computer Lab`, `Multimedia Room`, `Photography Room`,
+`Pre Press Room`, `Drawing Room`, `Bengkel Furniture` (plus keyword "lab").
+Tambah tipe baru di `LAB_FACILITY_TYPES` bila perlu.
+
+```powershell
+python scraper/room_booking.py --date 2026-10-19 --lab-only --print
+# 69 ruangan (11 lab), 238 jadwal, 6 peminjaman (1 lab)
+```
+
+Atau dari Python:
+
+```python
+from scraper.room_booking import scrape
+data = scrape("2026-10-19", location="MALANG")
+print(data["peminjaman"])
+```
+
 ## Web UI
 
 Ada halaman login + dashboard lokal:
@@ -83,6 +131,9 @@ python web/app.py
 - `/login` — form email (opsional) + tombol **Masuk dengan Microsoft**.
   Tombol ini menjalankan `auth/login.py`, dan lognya ditampilkan live.
 - `/` — status session: jumlah cookie, masa berlaku, tombol refresh & logout.
+- `/rooms` — tabel peminjaman lab. Pilih tanggal + lokasi + checkbox "Hanya lab",
+  lalu **Muat Data**. Data di-cache 5 menit per tanggal+lokasi supaya nggak
+  hammer server kampus.
 
 **UI ini sengaja nggak punya kolom password.** Password tetap diketik di
 domain resmi Microsoft. Kalau UI kita yang menerima password, itu pola
@@ -99,8 +150,9 @@ Struktur web:
 web/app.py               FastAPI + endpoint
 web/pages/login.html     halaman login
 web/pages/dashboard.html halaman status
+web/pages/rooms.html     tabel peminjaman lab
 web/static/style.css     styling
-web/static/app.js        logic frontend (polling log live)
+web/static/app.js        logic frontend (polling log live + tabel)
 ```
 
 ## Struktur

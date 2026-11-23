@@ -30,10 +30,11 @@ import subprocess
 import sys
 import threading
 import time
+from datetime import date as _date
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -49,6 +50,9 @@ app.mount("/static", StaticFiles(directory=WEB / "static"), name="static")
 
 _proc: subprocess.Popen | None = None
 _lock = threading.Lock()
+
+ROOMS_CACHE_TTL = 300  # detik; jangan hammer server kampus
+_rooms_cache: dict[tuple[str, str], tuple[float, dict]] = {}
 
 
 # --------------------------------------------------------------------------- #
@@ -107,6 +111,11 @@ def login_page() -> FileResponse:
     return FileResponse(WEB / "pages" / "login.html")
 
 
+@app.get("/rooms")
+def rooms_page() -> FileResponse:
+    return FileResponse(WEB / "pages" / "rooms.html")
+
+
 # --------------------------------------------------------------------------- #
 # api
 # --------------------------------------------------------------------------- #
@@ -122,6 +131,66 @@ def health() -> dict:
 @app.get("/api/status")
 def api_status() -> dict:
     return _status()
+
+
+@app.get("/api/rooms")
+def api_rooms(
+    day: str | None = None,
+    location: str = "MALANG",
+    lab_only: bool = False,
+):
+    """Ambil data peminjaman ruangan/lab (cache 5 menit per tanggal+lokasi)."""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+
+    from scraper.room_booking import SessionExpired, scrape
+
+    selected_day = (day or _date.today().isoformat()).strip()
+    try:
+        _date.fromisoformat(selected_day)
+    except ValueError:
+        return JSONResponse(
+            status_code=400, content={"error": "Format tanggal harus YYYY-MM-DD."}
+        )
+
+    cache_key = (selected_day, location.upper())
+    cached = _rooms_cache.get(cache_key)
+    fresh = True
+
+    if cached and time.time() - cached[0] < ROOMS_CACHE_TTL:
+        result = cached[1]
+        fresh = False
+    else:
+        try:
+            result = scrape(selected_day, location.upper())
+        except SessionExpired as exc:
+            return JSONResponse(status_code=503, content={"error": str(exc)})
+        except Exception as exc:
+            return JSONResponse(
+                status_code=502, content={"error": f"Gagal scraping: {exc}"}
+            )
+        _rooms_cache[cache_key] = (time.time(), result)
+
+    rows = result["lab_peminjaman"] if lab_only else result["peminjaman"]
+
+    return {
+        "date": result["date"],
+        "location": result["location"],
+        "scraped_at": result["scraped_at"],
+        "fresh": fresh,
+        "counts": {
+            "rooms": len(result["rooms"]),
+            "lab_rooms": len(result["lab_rooms"]),
+            "shifts": len(result["shifts"]),
+            "detail": len(result["detail"]),
+            "peminjaman": len(result["peminjaman"]),
+            "lab_peminjaman": len(result["lab_peminjaman"]),
+            "shown": len(rows),
+        },
+        "locations": result["locations"],
+        "lab_rooms": result["lab_rooms"],
+        "rows": rows,
+    }
 
 
 @app.post("/api/login/start")

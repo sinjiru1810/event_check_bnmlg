@@ -103,7 +103,7 @@ def dump_cookies(cookies: list[dict]) -> Path:
             "expires": c.get("expires"),
         }
         for c in cookies
-        if ACAD_HOST in c.get("domain", "")
+        if c.get("domain")
     ]
     COOKIES_PATH.parent.mkdir(parents=True, exist_ok=True)
     COOKIES_PATH.write_text(json.dumps(simple, indent=2), encoding="utf-8")

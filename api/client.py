@@ -24,6 +24,7 @@ from pathlib import Path
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
+STATE_PATH = ROOT / ".auth" / "state.json"
 COOKIES_PATH = ROOT / ".auth" / "cookies.json"
 
 USER_AGENT = (
@@ -33,9 +34,22 @@ USER_AGENT = (
 
 
 def _read_cookies() -> list[dict]:
-    if not COOKIES_PATH.exists():
-        return []
-    return json.loads(COOKIES_PATH.read_text(encoding="utf-8"))
+    """
+    state.json adalah sumber kebenaran (ditulis Playwright tiap login/refresh).
+    cookies.json cuma fallback + output mudah dibaca, dan sering ketinggalan.
+    """
+    if STATE_PATH.exists():
+        try:
+            data = json.loads(STATE_PATH.read_text(encoding="utf-8"))
+            cookies = [c for c in data.get("cookies", []) if c.get("domain")]
+            if cookies:
+                return cookies
+        except Exception:
+            pass
+
+    if COOKIES_PATH.exists():
+        return json.loads(COOKIES_PATH.read_text(encoding="utf-8"))
+    return []
 
 
 def session(refresh_if_missing: bool = True) -> requests.Session:

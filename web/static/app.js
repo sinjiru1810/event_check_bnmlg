@@ -9,7 +9,12 @@ async function api(path, options = {}) {
     ...options,
   });
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    let message = `HTTP ${response.status}`;
+    try {
+      const body = await response.json();
+      if (body.error) message = body.error;
+    } catch (_) {}
+    throw new Error(message);
   }
   return response.json();
 }
@@ -385,7 +390,104 @@ function initDashboard() {
   }, 30000);
 }
 
+/* ------------------------------------------------------------------ rooms */
+function initRooms() {
+  const dateInput = $("#f-date");
+  const locationSelect = $("#f-location");
+  const labCheck = $("#f-lab");
+  const button = $("#btn-load");
+  const buttonLabel = $(".btn__label", button);
+  const tbody = $("#r-body");
+  const meta = $("#r-meta");
+
+  const now = new Date();
+  dateInput.value = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  const escapeHtml = (value) =>
+    String(value ?? "").replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[char]);
+
+  const timeOnly = (value) => String(value ?? "").substring(0, 5);
+
+  function render(data) {
+    $("#r-shown").textContent = data.counts.shown;
+    $("#r-total").textContent = data.counts.peminjaman;
+    $("#r-lab").textContent = data.counts.lab_peminjaman;
+    $("#r-rooms").textContent = data.counts.lab_rooms;
+
+    meta.textContent =
+      `${data.date} · ${data.location} · diambil ${data.scraped_at}` +
+      (data.fresh ? "" : " (cache 5 menit)");
+
+    if (!data.rows.length) {
+      tbody.innerHTML =
+        '<tr><td colspan="7" class="empty">Tidak ada peminjaman untuk tanggal dan filter ini.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.rows
+      .map((row) => {
+        const statusClass = String(row.Status).toLowerCase() === "approved"
+          ? "tag--approved"
+          : "tag--requested";
+        const shift =
+          row.ShiftStart != null && row.ShiftEnd != null
+            ? `${row.ShiftStart}–${row.ShiftEnd}`
+            : "—";
+        return `<tr>
+          <td><span class="room-code">${escapeHtml(row.Facility_ID)}</span>
+              <span class="muted">${escapeHtml(row.Room)}</span></td>
+          <td><span class="tag ${statusClass}">${escapeHtml(row.Status)}</span></td>
+          <td>${escapeHtml(timeOnly(row.StartTime))}–${escapeHtml(timeOnly(row.EndTime))}</td>
+          <td>${escapeHtml(shift)}</td>
+          <td>${escapeHtml(row.Name)}<span class="muted">${escapeHtml(row.BinusianID)}</span></td>
+          <td>${escapeHtml(row.Description)}<span class="muted">${escapeHtml(row.Notes)}</span></td>
+          <td>${escapeHtml(row.Telephone)}</td>
+        </tr>`;
+      })
+      .join("");
+  }
+
+  async function load() {
+    button.disabled = true;
+    button.classList.add("is-loading");
+    buttonLabel.textContent = "Memuat…";
+
+    try {
+      const params = new URLSearchParams({
+        day: dateInput.value,
+        location: locationSelect.value,
+        lab_only: String(labCheck.checked),
+      });
+      const data = await api(`/api/rooms?${params.toString()}`);
+      render(data);
+      toast(`${data.counts.shown} peminjaman ditampilkan.`, "ok");
+    } catch (error) {
+      tbody.innerHTML =
+        `<tr><td colspan="7" class="empty">Gagal memuat: ${escapeHtml(error.message)}</td></tr>`;
+      toast(error.message, "err");
+    } finally {
+      button.disabled = false;
+      button.classList.remove("is-loading");
+      buttonLabel.textContent = "Muat Data";
+    }
+  }
+
+  button.addEventListener("click", load);
+  load();
+}
+
 /* ------------------------------------------------------------------- boot */
 const page = document.body.dataset.page;
 if (page === "login") initLogin();
 if (page === "dashboard") initDashboard();
+if (page === "rooms") initRooms();

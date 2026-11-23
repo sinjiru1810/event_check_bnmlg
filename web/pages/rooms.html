@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Peminjaman Lab · BINUS Maya Room Check</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body data-page="rooms">
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Peminjaman Lab</h1>
+          <p>Room Booking &amp; Transaction · BINUS Maya</p>
+        </div>
+        <a class="btn btn--ghost" href="/" style="width: auto">← Dashboard</a>
+      </header>
+
+      <section class="card" style="margin-bottom: 20px">
+        <div class="controls">
+          <div class="field" style="margin-bottom: 0">
+            <label for="f-date">Tanggal</label>
+            <input class="input" id="f-date" type="date" />
+          </div>
+          <div class="field" style="margin-bottom: 0">
+            <label for="f-location">Lokasi</label>
+            <select class="input" id="f-location">
+              <option value="MALANG">MALANG</option>
+              <option value="MLGB">Bridging Campus Malang</option>
+              <option value="ML001">Malang (ML001)</option>
+            </select>
+          </div>
+          <label class="check">
+            <input id="f-lab" type="checkbox" checked />
+            <span>Hanya lab</span>
+          </label>
+          <button class="btn btn--primary" id="btn-load" type="button" style="width: auto">
+            <span class="spinner"></span>
+            <span class="btn__label">Muat Data</span>
+          </button>
+        </div>
+        <p class="footer-note" style="margin-top: 12px">
+          Data di-cache 5 menit per tanggal + lokasi. Klik
+          <strong>Cek &amp; Refresh Session</strong> di dashboard kalau session mati.
+        </p>
+      </section>
+
+      <div class="grid-stats">
+        <div class="stat">
+          <div class="stat__label">Peminjaman ditampilkan</div>
+          <div class="stat__value" id="r-shown">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat__label">Total peminjaman</div>
+          <div class="stat__value" id="r-total">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat__label">Peminjaman lab</div>
+          <div class="stat__value" id="r-lab">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat__label">Ruangan lab</div>
+          <div class="stat__value" id="r-rooms">—</div>
+        </div>
+      </div>
+
+      <section class="card" style="padding: 0; overflow: hidden">
+        <div class="table-head">
+          <div>
+            <strong style="font-size: 15px">Daftar Peminjaman</strong>
+            <div class="footer-note" id="r-meta" style="margin-top: 2px">—</div>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ruangan</th>
+                <th>Status</th>
+                <th>Jam</th>
+                <th>Shift</th>
+                <th>Peminjam</th>
+                <th>Keperluan</th>
+                <th>Kontak</th>
+              </tr>
+            </thead>
+            <tbody id="r-body">
+              <tr><td colspan="7" class="empty">Pilih tanggal lalu klik Muat Data.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p class="footer-note">
+        Data mentah: <code>output/*.json</code> · endpoint:
+        <code>/api/rooms</code>
+      </p>
+    </main>
+
+    <div class="toast" id="toast"></div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
